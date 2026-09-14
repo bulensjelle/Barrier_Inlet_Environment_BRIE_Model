@@ -38,25 +38,25 @@
 %param = {'dt','dy'}; param1 = [0.01 0.02 0.025 0.05 0.08 0.1 0.2 0.25]; param2 = [1000 800 500 400 250 100 80 50];
 
 %% run_barrier_model
-name = 'drowning_inlet';
+name = 'SLRs Duck';
 param = {'slr','dummy'}; 
-param1 = [0:1e-3:1e-2]; 
+param1 = [2e-3:0.5e-3:5e-3]; 
 param2 = [ones(10,1)];
 
 output = cell(length(param1),length(param2));
 for ii=1:length(param1),
     parfor jj=1:length(param2),
-        ii
-        jj
-        b_struct = initialize_barrier_model;
+        ii;
+        jj;
+        b_struct = initialize_barrier_model_buffer;
         b_struct.name = name;
         
         b_struct.(param{1}) = param1(ii);
         b_struct.(param{2}) = param2(jj);
         
-        output(ii,jj) = {barrier_model(b_struct)};
+        output(ii,jj) = {barrier_model_buffer(b_struct)};
     
     end
 end
-b_struct = initialize_barrier_model;
+b_struct = initialize_barrier_model_buffer;
 save(name,'b_struct','output','param','param1','param2','-v7.3')

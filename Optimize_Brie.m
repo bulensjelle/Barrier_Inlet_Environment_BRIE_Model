@@ -1,0 +1,131 @@
+function objective = brie_calib_objective(x, paramNames, nReplicates, scaleVec, weightVec)
+%BRIE_CALIB_OBJECTIVE Objective function for Bayesian calibration of BRIE.
+
+if nargin < 3 || isempty(nReplicates)
+    nReplicates = 1;
+end
+
+if nargin < 4 || isempty(scaleVec)
+    scaleVec = ones(1,5);
+end
+
+if nargin < 5 || isempty(weightVec)
+    weightVec = [1 0 1 0 1];
+end
+
+metricNames = {'Nmean_diff','Nmed_diff','Nrmse','ks_stat','Nwasserstein'};
+
+% Validate objective weights/scales
+if numel(scaleVec) ~= 5 || numel(weightVec) ~= 5
+    error('scaleVec and weightVec must both have five elements.');
+end
+
+if any(~isfinite(scaleVec)) || any(scaleVec <= 0)
+    error('scaleVec must contain finite positive values.');
+end
+
+% Use the same initialisation in calibration and final evaluation
+b_struct = initialize_barrier_model_Cape_Hatteras();
+
+% Apply Bayesian-optimisation parameter values
+for k = 1:numel(paramNames)
+
+    paramName = paramNames{k};
+
+    if ~isfield(b_struct,paramName)
+        error('Parameter "%s" does not exist in b_struct.',paramName);
+    end
+
+    b_struct.(paramName) = x.(paramName);
+end
+
+metrics = nan(nReplicates,5);
+nInvalid = 0;
+
+for r = 1:nReplicates
+    try
+        b_out = barrier_model_buffer(b_struct);
+
+        % Require explicit drowned-status output from the model
+        if ~isfield(b_out,'drowned')
+            error('barrier_model_buffer did not return b_out.drowned.');
+        end
+
+        % Drowned barriers are infeasible model outcomes
+        if b_out.drowned
+            nInvalid = nInvalid + 1;
+            continue
+        end
+
+        runMetrics = nan(1,5);
+
+        for m = 1:5
+            if ~isfield(b_out,metricNames{m})
+                error('b_out.%s is missing.',metricNames{m});
+            end
+
+            runMetrics(m) = b_out.(metricNames{m});
+        end
+
+        % Reject incomplete or numerically invalid output
+        if any(~isfinite(runMetrics))
+            nInvalid = nInvalid + 1;
+            continue
+        end
+
+        metrics(r,:) = runMetrics;
+
+    catch ME
+        warning('brie_calib_objective:runFailed', ...
+            'Run failed (rep %d): %s',r,ME.message);
+
+        nInvalid = nInvalid + 1;
+    end
+end
+
+% Conservative feasibility rule:
+% reject parameter sets for which any replicate drowned or failed.
+if nInvalid > 0
+    objective = 1e6;
+    return
+end
+
+% All replicates were successful, so calculate mean performance.
+m = mean(metrics,1);
+
+% Normalised, weighted L1 objective.
+objective = sum(weightVec .* abs(m ./ scaleVec));
+
+% Final safeguard
+if ~isscalar(objective) || ~isfinite(objective)
+    objective = 1e6;
+end
+
+end
+% Free parameters — physically meaningful, bounded around your baseline values
+paramNames = {'phi','w_b_crit','h_b_crit','Qow_max'};
+
+optVars = [
+    optimizableVariable('phi',      [1e-5, 1], 'Transform','log')   % baseline 0.01
+    optimizableVariable('w_b_crit',  [50, 1000])
+    optimizableVariable('h_b_crit',  [4, 20])
+    optimizableVariable('Qow_max',  [20, 2000])
+    ];
+
+scaleVec = [2.2948385 0.39781233 3.1431515 0.012338549 2.2961276];  
+weightVec = [1 1 2 1 1];
+objFun = @(x) brie_calib_objective(x, paramNames, 1, scaleVec, weightVec);
+
+
+results = bayesopt(objFun, optVars, ...
+    'MaxObjectiveEvaluations', 300, ...
+    'IsObjectiveDeterministic', false, ...
+    'AcquisitionFunctionName', 'expected-improvement-plus', ...
+    'OutputFcn', @saveToFile);
+
+bestParams = results.XAtMinObjective
+bestStruct = initialize_barrier_model_Cape_Hatteras();
+for k = 1:numel(paramNames)
+    bestStruct.(paramNames{k}) = bestParams.(paramNames{k});
+end
+b_out_best = barrier_model_buffer(bestStruct);
