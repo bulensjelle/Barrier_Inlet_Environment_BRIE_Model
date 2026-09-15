@@ -157,9 +157,12 @@ for i=2:length(t) % years
     
     %sea level
     if sl_change_on
-        slr_model = sl_rate(floor(i/nt)); end  
-    slr_model = slr;
-    z = z+(dt*slr_model); %height of sea level
+        slr = sl_rate(floor(i/nt));
+    else
+        %nothing
+    end
+    
+    z = z+(dt*slr); %height of sea level
         
     w = x_b-x_s; %barrier width
     
@@ -175,7 +178,6 @@ for i=2:length(t) % years
         break
     end
     
-    if barrier_model_on
         %volume deficit
         Vd_b = max(0,(w_b_crit-w).*(h_b+d_b));
         Vd_h = max(0,(h_b_crit-h_b).*w);
@@ -191,10 +193,10 @@ for i=2:length(t) % years
         
         %changes
         ff = ((z-s_background.*x_b-d_b)./(z-s_background.*x_b+h_b));
-        x_t_dt = (4*Qsf.*(h_b+d_sf)./(d_sf.*(2*h_b+d_sf)))+(2.*dt.*slr_model./s_sf);
+        x_t_dt = (4*Qsf.*(h_b+d_sf)./(d_sf.*(2*h_b+d_sf)))+(2.*dt.*slr./s_sf);
         x_s_dt = 2*Qow./((2*h_b)+d_sf)./(1-ff)-(4*Qsf.*(h_b+d_sf)./(((2*h_b)+d_sf).^2));
         x_b_dt = Qow_b./(h_b+d_b);
-        h_b_dt = (Qow_h./w)-(dt.*slr_model);
+        h_b_dt = (Qow_h./w)-(dt.*slr);
         
         %how much q overwash w in total m3/yr
         Qoverwash(i) = sum(dy.*Qow_b./dt);
@@ -203,7 +205,7 @@ for i=2:length(t) % years
         x_s_dt = 0;
         x_b_dt = 0;
         h_b_dt = 0;
-    end
+end
     
     if ast_model_on %only alongshore transport calculation to estimate flux into inlets
         

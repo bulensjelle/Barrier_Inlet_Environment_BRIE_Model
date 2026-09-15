@@ -1,49 +1,31 @@
-function b_struct = initialize_barrier_model_Cape_Hatteras
+function b_struct = initialize_barrier_model
 %#ok<*NASGU>
 %which modules to run
-name = 'BRIE Cape Hatteras'; 
+name = 'ExampleBarrierPlot5'; 
 barrier_model_on = true;
 ast_model_on = true;
 inlet_model_on = true;
-buffer_model_on = true;
-calibration_on = true;
-real_waves = true;
-sl_change_on = false;
+buffers_model_on = true;
 make_gif = true;
 plot_on = true;
 sedstrat_on = false;
-
-%feed shorelines to BRIE
-Initial_shoreline = 'BRIE_initial_shoreline_Cape_Hatteras.csv'; %initial shoreline
-Current_shoreline  = 'Current_shoreline_Cape_Hatteras.csv'; %current shoreline/ shoreline at end calibration period
 
 %general parameters
 rho_w = 1025; %density water kg/m3
 g = 9.81;
 
-%wave climate parameters derrived from wavehindcast/forecast
-wave_height = 1.27; %m Transport-equivalent significant wave height.
-wave_period = 7.34; %s Alongshore-transport-weighted mean spectral period (Tm02)
-shoreface_moment = 3931.21 ;%  mean(Hs^5 * Tm02^2.5) calculated from a wave hindcast/forecast
-wave_pdf = 'wave_pdf_by_island_orientation.csv'; % a transport-weighted sampling distribution PDF 
-
-wave_asym = 0.4; %if real waves  are turned off
-wave_high = 0.1;
+%wave climate parameters
+wave_height = 2; %m
+wave_period = 6; %s
+wave_asym = 0.8;
+wave_high = 0.2;
 
 %barrier model parameters
-if sl_change_on
-    sl_incrememt = 10;
-    sl_nt = slr_incrememt/0.05; %0.05 = dt
-    sl_rate = [10 10 10 10];
-else
-    slr = 5e-3; %sea level rise m/yr
-end
-
-%morphological parameters
-s_background = 6.3333e-4; %background slope (beta)
-w_b_crit = 990.87; %critical barrier width m
-h_b_crit = 19.69; %critical barrier height m
-Qow_max = 43.516; %max overwash flux m3/m/yr
+slr = 2e-3; %sea level rise m/yr
+s_background = 3e-4; %background slope (beta)
+w_b_crit = 800; %critical barrier width m
+h_b_crit = 7; %critical barrier height m
+Qow_max = 20; %max overwash flux m3/m/yr
 
 z = 0; %initial sea level (m)
 bb_depth = 3; %back barrier depth (m)
@@ -51,24 +33,20 @@ bb_depth = 3; %back barrier depth (m)
 grain_size = 2e-4; %(m)
 R = 1.65; %relative density of sand
 
-% e_s = 0.1; %shoreface efficiency values from Aleja/Ashton
-% c_s = 0.1;
-
-phi = 1.114e-05;
+e_s = 0.01; %shoreface efficiency values from Aleja/Ashton
+c_s = 0.01;
 
 %alongshore stretch
 dy = 50; %length of each alongshore section (m)
 ny = 3004; %number of alonghsore sections
-if buffer_model_on
-    ny_buffer = round(ny*0.15); %buffer on each side is x percent of ny
+if buffers_model_on
+    ny_buffer = ny*0.1;
 else
-    %Do nothing (only use ny)
-end
+    pass
 
 %timestepping
-duration_t = 170; %duration of the model run in years 
 dt = 0.05; %years
-nt = duration_t/dt; %number of timesteps
+nt = 3.4e3; %number of timesteps
 dtsave = 20; %save spacing
 
 
@@ -78,13 +56,13 @@ AngArray = linspace(-0.5*pi,0.5*pi,wave_climl)';
 k = 5.3e-6*1050*(g^1.5)*(0.5^1.2)*(sqrt(g*0.78)/(2*pi))^0.2; %correct k from Nienhuis, Ashton, Giosan 2015 (ashton's 2006 k value is wrong)
 
 Jmin = 10000; %minimum inlet spacing, roos/schuttelaars (m)
-a0 = 0.45; %amplitude of tide (m)
+a0 = 0.3; %amplitude of tide (m)
 omega0 = 1.4e-4; %tidal frequency (rad s-1);
 inlet_asp = sqrt(0.005); %aspect ratio inlet (gamma in swart/zimmerman)
 g = 9.81;
 man_n = 0.05; %sm^-(1/3) manning n (vegetated channel)
 u_e = 1; %ms-1 inlet equilibrium velocity (see swart/zimmerman)
-inlet_max = 100; %maximum number of inlets in the model (mostly for debugging)
+inlet_max = 1; %maximum number of inlets in the model (mostly for debugging)
 marsh_cover = 0.5; %percentage of backbarrier covered by marsh and therefore does not contribute to tidal prism
 
 %new explicit relationship between boundary conditions and inlet area

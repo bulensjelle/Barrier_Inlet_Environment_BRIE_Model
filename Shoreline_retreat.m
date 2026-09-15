@@ -80,7 +80,7 @@ Tcmp = innerjoin(T, Tmodel, 'Keys','id');
 
 % Add difference and export
 Tcmp.dx_diff = Tcmp.dx_model - Tcmp.dx; % model minus observed
-writetable(Tcmp, 'BRIE_shoreline_change_Cape_Hatterad.csv');
+writetable(Tcmp, 'BRIE_shoreline_change_Cape_Hatteras.csv');
 
 % Scatter plot model vs observed colored by point density
 figure('Color','w');

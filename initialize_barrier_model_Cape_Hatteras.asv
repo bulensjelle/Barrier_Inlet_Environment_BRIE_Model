@@ -8,7 +8,7 @@ inlet_model_on = true;
 buffer_model_on = true;
 calibration_on = true;
 real_waves = true;
-sl_change_on = false;
+slr_change_on = true;
 make_gif = true;
 plot_on = true;
 sedstrat_on = false;
@@ -31,19 +31,11 @@ wave_asym = 0.4; %if real waves  are turned off
 wave_high = 0.1;
 
 %barrier model parameters
-if sl_change_on
-    sl_incrememt = 10;
-    sl_nt = slr_incrememt/0.05; %0.05 = dt
-    sl_rate = [10 10 10 10];
-else
-    slr = 5e-3; %sea level rise m/yr
-end
-
-%morphological parameters
+slr = 5e-3; %sea level rise m/yr
 s_background = 6.3333e-4; %background slope (beta)
-w_b_crit = 990.87; %critical barrier width m
-h_b_crit = 19.69; %critical barrier height m
-Qow_max = 43.516; %max overwash flux m3/m/yr
+w_b_crit = 716.572704481389; %critical barrier width m
+h_b_crit = 16.55063406616; %critical barrier height m
+Qow_max = 49.9607160199077; %max overwash flux m3/m/yr
 
 z = 0; %initial sea level (m)
 bb_depth = 3; %back barrier depth (m)
@@ -54,7 +46,7 @@ R = 1.65; %relative density of sand
 % e_s = 0.1; %shoreface efficiency values from Aleja/Ashton
 % c_s = 0.1;
 
-phi = 1.114e-05;
+phi = 1.00691985249466e-05;
 
 %alongshore stretch
 dy = 50; %length of each alongshore section (m)
